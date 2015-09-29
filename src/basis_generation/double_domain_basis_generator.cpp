@@ -20,8 +20,33 @@
 
 DoubleDomainBasisGenerator::DoubleDomainBasisGenerator(const char *mesh_file_uncons, const char *mesh_file_cons, AffineTransformer<double> *transformer)
 {
-    unconstrained_portion_ = new SingleDomainBasisGenerator(mesh_file_cons,transformer);
-    constrained_portion_ = new SingleDomainBasisGenerator(mesh_file_uncons,transformer);
+    unconstrained_portion_ = new SingleDomainBasisGenerator(mesh_file_uncons,transformer,false);
+    constrained_portion_ = new SingleDomainBasisGenerator(mesh_file_cons,transformer,false);
+}
+
+void DoubleDomainBasisGenerator::ProcessFixedVertex(const char* filename){
+    constrained_portion_->ProcessFixedVertex(filename);
+}
+
+void DoubleDomainBasisGenerator::GenerateBasis(const char *basis_prefix, int linear_basis_num, int final_basis_num){
+    constrained_portion_->GenerateBasis(basis_prefix,linear_basis_num/2,final_basis_num/2,false);
+    unconstrained_portion_->GenerateBasis(basis_prefix,linear_basis_num/2,final_basis_num/2,false);
+    //Now we will generate the missing pieces and piece them together
+    //First the linear modes if you please
+    int unconsVertNum = unconstrained_portion_->vertex_num_;
+    int consVertNum = constrained_portion_->vertex_num_;
+    int totalVerts = unconsVertNum+consVertNum;
+    linearModes_.resize(totalVerts*3*linear_basis_num);
+    for(int c=0;c<(linear_basis_num/2);c++){
+        for(int r=0;r<consVertNum*3;r++){
+            linearModes_[ELT(r,c,totalVerts*3)]=constrained_portion_->basis_generator->linear_modes_[ELT(r,c,unconsVertNum*3)];
+        }
+    }
+    for(int c=0;c<(linear_basis_num/2);c++){
+        for(int r=0;r<unconsVertNum*3;r++){
+            linearModes_[ELT(r+(consVertNum*3),c+(linear_basis_num/2),totalVerts*3)]=constrained_portion_->basis_generator->linear_modes_[ELT(r,c,unconsVertNum*3)];
+        }
+    }
 }
 
 /*

@@ -9,8 +9,8 @@ class SingleDomainBasisGenerator : public SubspaceTet
 {
 public:
   SingleDomainBasisGenerator(const char* mesh_file,
-                            AffineTransformer<double>* transformer = NULL);
-  void GenerateBasis(const char *basis_prefix, int linear_basis_num, int final_basis_num);
+                            AffineTransformer<double>* transformer = NULL,bool loadInterface = true);
+  void GenerateBasis(const char *basis_prefix, int linear_basis_num, int final_basis_num, bool writeStuff = true);
   void RegenerateStitchBasis(int modeID);
   void preLoad(const char* prefix);
   void setStitchedStiffnessMatrix(SparseMatrix* spmat);

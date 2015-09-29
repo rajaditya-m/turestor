@@ -11,9 +11,9 @@ class DoubleDomainBasisGenerator
 {
 public:
   DoubleDomainBasisGenerator(const char *mesh_file_uncons, const char *mesh_file_cons, AffineTransformer<double>* transformer = NULL);
-  void preLoad(const char* prefix);
-  /*SingleDomainBasisGenerator(const char* mesh_file,
-                            AffineTransformer<double>* transformer = NULL);
+  void ProcessFixedVertex(const char *filename);
+  void GenerateBasis(const char *basis_prefix, int linear_basis_num, int final_basis_num);
+    /*
   void GenerateBasis(const char *basis_prefix, int linear_basis_num, int final_basis_num);
   void RegenerateStitchBasis(int modeID);
   void preLoad(const char* prefix);
@@ -37,6 +37,11 @@ public:
 
   SingleDomainBasisGenerator *constrained_portion_;
   SingleDomainBasisGenerator *unconstrained_portion_;
+
+  std::vector<double> linearModes_;
+  std::vector<double> eigenValues_;
+  std::vector<double> eigenVectors_;
+  std::vector<double> frequencies_;
 };
 
 #endif // SINGLEDOMAINBASISGENERATOR_H

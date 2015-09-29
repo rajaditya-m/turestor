@@ -26,6 +26,7 @@ namespace subspace_simulator {
 SubspaceTet* tet;
 bool newBasisConstructed = false;
 SingleDomainBasisGenerator *basisGenerator;
+DoubleDomainBasisGenerator *basisGeneratorDouble;
 int part_id = 16;
 int render_mode = 0;
 using namespace global;
@@ -50,16 +51,23 @@ void Init() {
   CreateBody();
 
   //Compute the basis first
-  //SingleDomainBasisGenerator generator(GetMeshFile());
+
   std::vector<std::string>* transform_cmd = conf.Get<std::vector<std::string>* >("affine_transform");
   AffineTransformer<double> transform(*transform_cmd);
   basisGenerator = new SingleDomainBasisGenerator(GetMeshFile(),&transform);
   std::string basis_prefix = dj::Format("%z/modal_basis/genBasis",GetDataFolder());
-  //std::string mass_file = dj::Format("%z/vertexmass.M",GetDataFolder());
-  //basisGenerator->LoadMass(mass_file.c_str());
   std::string fixed_vertex_file = dj::Format("%z/fixed_verts.bou",GetModelFolder());
   basisGenerator->ProcessFixedVertex(fixed_vertex_file.c_str());
   basisGenerator->preLoad(basis_prefix.c_str());
+
+  std::string constrainedMeshName = dj::Format("%s/stem", GetDataFolder());
+  std::string unconstrainedMeshName = dj::Format("%s/head", GetDataFolder());
+
+  basisGeneratorDouble = new DoubleDomainBasisGenerator(unconstrainedMeshName.c_str(),constrainedMeshName.c_str(),&transform);
+  std::string basis_prefix_2 = dj::Format("%z/modal_basis/genBasis",GetDataFolder());
+  std::string fixed_vertex_file_2 = dj::Format("%z/fixed_verts.bou",GetModelFolder());
+  basisGeneratorDouble->ProcessFixedVertex(fixed_vertex_file.c_str());
+  //basisGenerator->preLoad(basis_prefix.c_str());
   //basisGenerator->GenerateBasis(basis_prefix.c_str(),30,90);
 
   //Compute the cubature here

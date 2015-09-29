@@ -3,6 +3,7 @@
 
 #include "single_domain_cubature.h"
 #include "single_domain_basis_generator.h"
+#include "double_domain_basis_generator.h"
 
 class SubspaceSimulator : public InputHandler
 {
