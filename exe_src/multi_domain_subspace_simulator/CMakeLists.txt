@@ -2,5 +2,6 @@ set(sources
   multi_domain_subspace_simulator_main.cpp
 )
 
-add_executable(multi_domain_subspace_simulator ${headers} ${sources})
-target_link_libraries(multi_domain_subspace_simulator  ${LIBS})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_executable(${dir_name} ${headers} ${sources})
+target_link_libraries(${dir_name} ${LIBS})

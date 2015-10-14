@@ -297,7 +297,7 @@ enum CREATE_DIR_RESULT SteveLib::create_dir( const string& name )
 	// FIXME
 	//ok = CreateDirectory( wideStr, NULL );
 	string temp = wchar2string( wideStr );
-  ok = CreateDirectory(reinterpret_cast<LPCWSTR>(temp.c_str()), NULL );
+  ok = CreateDirectory(reinterpret_cast<LPCTSTR>(temp.c_str()), NULL );
 	delete wideStr;
 
 	if( ok )

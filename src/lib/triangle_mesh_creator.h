@@ -1,5 +1,6 @@
 #ifndef TRIANGLE_MESH_CREATOR_H
 #define TRIANGLE_MESH_CREATOR_H
+#include <vector>
 void CreateCylinder(double radius, double height, int slice, int stack,
                     std::vector<double>& verts, std::vector<double>& normal, std::vector<int>& tri);
 

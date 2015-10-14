@@ -727,6 +727,8 @@ bool BasisGenerator::MassPCA2(int output_basis_num, Eigen::MatrixXd dataMatrix,s
 
     basis.clear();
     basis.insert(basis.end(), pcaData.data(), pcaData.data() + n3 * output_basis_num);
+
+		return false;
 }
 
 void BasisGenerator::ComputeAllModes(int linear_mode_num, int non_linear_mode_num) {

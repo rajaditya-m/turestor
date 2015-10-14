@@ -9,6 +9,8 @@ set(sources
   input_handler.cpp
   qt_gl_3d_scene_navigator.cpp
   qt_object_selector.cpp
+  qt_object_selector.h.cpp
 )
 
-add_library(qt_opengl_util ${headers} ${sources})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

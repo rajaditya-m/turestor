@@ -2,5 +2,6 @@ set(sources
   tet_mesh_simulator_main.cpp
 )
 
-add_executable(tet_mesh_simulator ${headers} ${sources})
-target_link_libraries(tet_mesh_simulator  ${LIBS})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_executable(${dir_name} ${headers} ${sources})
+target_link_libraries(${dir_name} ${LIBS})

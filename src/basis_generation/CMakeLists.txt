@@ -1,0 +1,76 @@
+set(headers
+  basis_generator.h
+  cubica_basis_generator.h
+  double_domain_basis_generator.h
+  MatrixOps.h
+  multi_domain_basis_generator.h
+  single_domain_basis_generator.h
+ pardio_solver/linearSolver.h
+pardio_solver/PardisoSolver.h
+
+vega_basis_generator/sparseSolverAvailability.h
+vega_basis_generator/ARPACKSolver.h
+vega_basis_generator/CGSolver.h
+vega_basis_generator/computeStiffnessMatrixNullspace.h
+vega_basis_generator/cubicMesh.h
+vega_basis_generator/insertRows.h
+vega_basis_generator/invKSolver.h
+vega_basis_generator/invMKSolver.h
+vega_basis_generator/lapack-headers.h
+vega_basis_generator/linearSolver.h
+vega_basis_generator/matrixBLAS.h
+vega_basis_generator/matrixMultiplyMacros.h
+vega_basis_generator/matrixPCA.h
+vega_basis_generator/PardisoSolver.h
+vega_basis_generator/performanceCounter.h
+vega_basis_generator/sparseSolverAvailability.h
+vega_basis_generator/sparseSolvers.h
+vega_basis_generator/SPOOLESSolver.h
+vega_basis_generator/SPOOLESSolverMT.h
+vega_basis_generator/StVKCubeABCD.h
+vega_basis_generator/StVKElementABCDLoader.h
+vega_basis_generator/StVKHessianTensor.h
+vega_basis_generator/StVKTetHighMemoryABCD.h
+vega_basis_generator/triple.h
+vega_basis_generator/vegalong.h
+
+)
+
+set(sources
+  basis_generator.cpp
+  cubica_basis_generator.cpp
+  double_domain_basis_generator.cpp
+  MatrixOps.cpp
+  multi_domain_basis_generator.cpp
+  single_domain_basis_generator.cpp
+  util.cpp
+  pardio_solver/linearSolver.cpp
+  pardio_solver/PardisoSolver.cpp
+
+vega_basis_generator/ARPACKSolver.cpp
+vega_basis_generator/CGSolver.cpp
+vega_basis_generator/computeStiffnessMatrixNullspace.cpp
+vega_basis_generator/cubicMesh.cpp
+vega_basis_generator/cubicMeshIntegrals.cpp
+vega_basis_generator/insertRows.cpp
+vega_basis_generator/invKSolver.cpp
+vega_basis_generator/invMKSolver.cpp
+vega_basis_generator/linearSolver.cpp
+vega_basis_generator/matrixBLAS.cpp
+vega_basis_generator/matrixBLASOptimized.cpp
+vega_basis_generator/matrixBLASVanilla.cpp
+vega_basis_generator/matrixPCA.cpp
+vega_basis_generator/PardisoSolver.cpp
+vega_basis_generator/SPOOLESSolver.cpp
+vega_basis_generator/SPOOLESSolverMT.cpp
+vega_basis_generator/StVKCubeABCD.cpp
+vega_basis_generator/StVKElementABCDLoader.cpp
+vega_basis_generator/StVKHessianTensor.cpp
+vega_basis_generator/StVKTetHighMemoryABCD.cpp
+
+)
+
+include_directories(pardio_solver)
+include_directories(vega_basis_generator)
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

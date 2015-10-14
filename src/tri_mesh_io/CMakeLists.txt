@@ -14,5 +14,5 @@ set(sources
   triangular_mesh_io.cpp
 )
 
-add_library(tri_mesh_io ${headers} ${sources})
-target_link_libraries(tri_mesh_io tet_mesh_io)
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

@@ -24,6 +24,7 @@
 #define TOKEN_TO_STRING1(t) # t
 #define STRINGIZE_TOKEN1(t) TOKEN_TO_STRING1(t)
 #define DATA_DIRECTORY STRINGIZE_TOKEN1(CURRENT_DIRECTORY)
+
 #endif
 class OpenGLQt;
 typedef double Real;

@@ -1,6 +1,6 @@
 set(headers
-  corotationalLinearFEMForceModel.h
   corotationalLinearFEM.h
+  corotationalLinearFEMForceModel.h
   eig3.h
   forceModel.h
   generateMassMatrix.h
@@ -22,12 +22,12 @@ set(headers
   StVKIsotropicMaterial.h
   StVKStiffnessMatrix.h
   StVKTetABCD.h
-  tetMesh.h
   tet_mesh_simulator_bridge.h
+  tetMesh.h
   vec2d.h
   vec3d.h
-  volumetricMeshENuMaterial.h
   volumetricMesh.h
+  volumetricMeshENuMaterial.h
   volumetricMeshMooneyRivlinMaterial.h
   volumetricMeshOrthotropicMaterial.h
   volumetricMeshParser.h
@@ -54,8 +54,8 @@ set(sources
   StVKIsotropicMaterial.cpp
   StVKStiffnessMatrix.cpp
   StVKTetABCD.cpp
-  tetMesh.cpp
   tet_mesh_simulator_bridge.cpp
+  tetMesh.cpp
   vec3d.cpp
   volumetricMesh.cpp
   volumetricMeshENuMaterial.cpp
@@ -64,4 +64,5 @@ set(sources
   volumetricMeshParser.cpp
 )
 
-add_library(vega ${headers} ${sources})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

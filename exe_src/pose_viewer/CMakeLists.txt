@@ -2,5 +2,6 @@ set(sources
   pose_viewer.cpp
 )
 
-add_executable(pose_viewer ${headers} ${sources})
-target_link_libraries(pose_viewer  ${LIBS})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_executable(${dir_name} ${headers} ${sources})
+target_link_libraries(${dir_name} ${LIBS})

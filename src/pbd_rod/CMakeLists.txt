@@ -12,4 +12,5 @@ set(sources
   pbd_rod_simulator.cpp
 )
 
-add_library(pbd_rod ${headers} ${sources})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

@@ -1,5 +1,7 @@
 set(headers
   affine_transformer.h
+  biconjugate_gradient_stablized.h
+  binary_file_io.h
   blas_wrapper.h
   buffer_manager.h
   config_file.h
@@ -10,19 +12,21 @@ set(headers
   fixed_vector.h
   fixed_vector_utility.h
   fps_calculator.h
-  high_performance_timer.h
   macro_constant.h
-  opengl_helper.h
+  matlab_io.h
+  MERSENNETWISTER.h
   print_macro.h
   profiler.h
   progress_bar.h
   quaternion.h
-  rainbow_color.h
   random.h
-  scene.h
   singleton.h
+  statistics.h
+  string_formatter.h
   svd.h
+  text_file_io.h
   timer.h
+  triangle_mesh_creator.h
   utility_function.h
   vector_io.h
   vector_lib.h
@@ -30,13 +34,17 @@ set(headers
 
 set(sources
   affine_transformer.cpp
+  biconjugate_gradient_stablized.cpp
+  binary_file_io.cpp
   config_file.cpp
   conjugate_gradient_solver.cpp
-  opengl_helper.cpp
+  profiler.cpp
   progress_bar.cpp
   quaternion.cpp
-  rainbow_color.cpp
-  scene.cpp
+  string_formatter.cpp
+  text_file_io.cpp
+  triangle_mesh_creator.cpp
 )
 
-add_library(lib ${headers} ${sources})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

@@ -2,5 +2,6 @@ set(sources
   subspace_pose_viewer_main.cpp
 )
 
-add_executable(subspace_pose_viewer ${headers} ${sources})
-target_link_libraries(subspace_pose_viewer  ${LIBS})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_executable(${dir_name} ${headers} ${sources})
+target_link_libraries(${dir_name} ${LIBS})

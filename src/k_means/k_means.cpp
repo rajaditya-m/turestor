@@ -11,7 +11,7 @@ History:
 #include <math.h>
 #include <time.h>
 #include <iostream>
-#include "k-means.h"
+#include "k_means.h"
 using namespace std;
 
 

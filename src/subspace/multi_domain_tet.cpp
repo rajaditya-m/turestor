@@ -5781,32 +5781,3 @@ void MultiDomainTet::UpdateObjMeshPosition() {
     obj_->setPosition(obj_v, pos);
   }
 }
-
-#if  0
-// subspace momentum compensation
-std::vector<Vec3> cm_offset(part_num_, Vec3(0, 0, 0));
-std::vector<Mat3> rotation(part_num_, Mat3::Zero());
-if (0)
-  for (int p = 0; p < part_num_; ++p) {
-    if (p == fixed_domain_) continue;
-    MapVec part_q(&q_[basis_offset_[p]], part_basis_size_[p]);
-    Vec old_q = part_q;
-    cm_offset[p] = momentum_matrix_[p] * old_q;
-    //    P(cm_offset[p]);
-    Mat3 lagragian_matrix = momentum_matrix_[p] * momentum_matrix_transpose_[p];
-    Vec3 lambda = lagragian_matrix.ldlt().solve(cm_offset[p]);
-    Vec offset = momentum_matrix_transpose_[p] * lambda;
-    //    part_q = old_q - offset;
-    if (0) {
-      double norm = (momentum_matrix_[p].transpose() - momentum_matrix_transpose_[p]).norm();
-      auto diff = momentum_matrix_[p] * part_q;
-      auto diff0 = momentum_matrix_[p] * old_q;
-      PMAT(lagragian_matrix);
-      P(lambda);
-      ASSERT(diff.norm() < 1e-8, P(diff.norm(), diff0.norm(), norm));
-    }
-    //    MapVec(&vel_q_[basis_offset_[p]], part_basis_size_[p]) -= offset / dt;
-    //    cm_offset[p] /= mass_per_part_[p];
-    //    P(cm_offset[p]);
-  }
-#endif

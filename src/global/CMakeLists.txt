@@ -6,4 +6,5 @@ set(sources
   global.cpp
 )
 
-add_library(global ${headers} ${sources})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

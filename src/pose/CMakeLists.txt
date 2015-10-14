@@ -5,9 +5,9 @@ set(headers
   pose_sampler.h
   pose_viewer_simulator.h
   sample_pose_simulator.h
+  skeleton.h
   skeleton_adjuster.h
   skeleton_builder.h
-  skeleton.h
   skeleton_node.h
   skeleton_rotator.h
   tet.h
@@ -21,8 +21,8 @@ set(sources
   pose_sampler.cpp
   pose_viewer_simulator.cpp
   sample_pose_simulator.cpp
-  skeleton_builder.cpp
   skeleton.cpp
+  skeleton_builder.cpp
   skeleton_node.cpp
   skeleton_rotator.cpp
   tet.cpp
@@ -30,4 +30,5 @@ set(sources
   user_interaction.cpp
 )
 
-add_library(pose ${headers} ${sources})
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources})

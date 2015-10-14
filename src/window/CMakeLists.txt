@@ -13,5 +13,6 @@ set(sources
   open_gl_qt.cpp
 )
 
-add_library(window ${headers} ${sources} ${ui_headers})
-target_link_libraries(window Qt5::Widgets Qt5::OpenGL)
+ExtractLastPartFromFullPath(${CMAKE_CURRENT_LIST_DIR} dir_name)
+add_library(${dir_name} ${headers} ${sources} ${ui_headers})
+target_link_libraries(${dir_name} Qt5::Widgets Qt5::OpenGL)

@@ -2167,9 +2167,9 @@ void Tet::Build_Boundary_Triangles() {
         auto it1 = std::find(incident_triangle_renderer_[v1].begin(),incident_triangle_renderer_[v1].end(),i);
         auto it2 = std::find(incident_triangle_renderer_[v2].begin(),incident_triangle_renderer_[v2].end(),i);
         auto it3 = std::find(incident_triangle_renderer_[v3].begin(),incident_triangle_renderer_[v3].end(),i);
-        if(it1==incident_triangle_renderer_[v1].end() || it1==incident_triangle_renderer_[v2].end() || it1==incident_triangle_renderer_[v3].end()) {
-            std::cout <<"[WARNING] Something is wrong in triangles....\n";
-        }
+        //if(it1==incident_triangle_renderer_[v1].end() || it1==incident_triangle_renderer_[v2].end() || it1==incident_triangle_renderer_[v3].end()) {
+        //    std::cout <<"[WARNING] Something is wrong in triangles....\n";
+        //}
         incident_triangle_renderer_[v1].erase(it1);
         incident_triangle_renderer_[v2].erase(it2);
         incident_triangle_renderer_[v3].erase(it3);
