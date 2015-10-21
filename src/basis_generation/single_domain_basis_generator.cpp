@@ -54,7 +54,8 @@ void SingleDomainBasisGenerator::GenerateBasis(const char *basis_prefix, int lin
     basis_generator->SetFixedVertices(std::set<int>(fixed_verts_.begin(), fixed_verts_.end()));
   }
   basis_generator->setPrefix(basis_prefix);
-  basis_generator->SetInterfaceVertices(interface_vertices_,interface_vertex_split_);
+	if (writeStuff)
+		basis_generator->SetInterfaceVertices(interface_vertices_,interface_vertex_split_);
   basis_generator->ComputeAllModes(linear_basis_num, final_basis_num);
 
   if(writeStuff) {

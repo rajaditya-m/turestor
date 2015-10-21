@@ -30,42 +30,83 @@ void DoubleDomainBasisGenerator::ProcessFixedVertex(const char* filename){
 
 void DoubleDomainBasisGenerator::GenerateBasis(const char *basis_prefix, int linear_basis_num, int final_basis_num){
     constrained_portion_->GenerateBasis(basis_prefix,linear_basis_num/2,final_basis_num/2,false);
-    unconstrained_portion_->GenerateBasis(basis_prefix,linear_basis_num/2,final_basis_num/2,false);
+		unconstrained_portion_->GenerateBasis(basis_prefix,linear_basis_num/2,final_basis_num/2,false);
+
+
     //Now we will generate the missing pieces and piece them together
-    //First the linear modes if you please
+    //First the non-linear modes if you please
     int unconsVertNum = unconstrained_portion_->vertex_num_;
     int consVertNum = constrained_portion_->vertex_num_;
     int totalVerts = unconsVertNum+consVertNum;
-    linearModes_.resize(totalVerts*3*linear_basis_num);
-    for(int c=0;c<(linear_basis_num/2);c++){
+    nonLinearModes_.resize(totalVerts*3*final_basis_num,0);
+		for (int c = 0; c<(final_basis_num / 2); c++){
         for(int r=0;r<consVertNum*3;r++){
-            linearModes_[ELT(r,c,totalVerts*3)]=constrained_portion_->basis_generator->linear_modes_[ELT(r,c,unconsVertNum*3)];
+					nonLinearModes_[ELT(totalVerts * 3, r, c)] = constrained_portion_->basis_generator->non_linear_modes_[ELT(consVertNum * 3, r, c)];
         }
     }
-    for(int c=0;c<(linear_basis_num/2);c++){
+		for (int c = 0; c<(final_basis_num / 2); c++){
         for(int r=0;r<unconsVertNum*3;r++){
-            linearModes_[ELT(r+(consVertNum*3),c+(linear_basis_num/2),totalVerts*3)]=constrained_portion_->basis_generator->linear_modes_[ELT(r,c,unconsVertNum*3)];
+					nonLinearModes_[ELT(totalVerts * 3, r + (consVertNum * 3), c + (final_basis_num / 2))] = unconstrained_portion_->basis_generator->non_linear_modes_[ELT(unconsVertNum * 3, r, c)];
         }
     }
+		sprintf(file_name_, "%s.basis.bin", basis_prefix);
+		WriteBasisInBinary(file_name_, totalVerts, final_basis_num, &nonLinearModes_[0]);
+
+		//Next we want the individual basises (youknow for cubature and stuff)
+		std::vector<double> paddedBasis1(consVertNum * 3 * final_basis_num,0);
+		memcpy(&paddedBasis1[0], &(constrained_portion_->basis_generator->non_linear_modes_[0]), sizeof(double)*consVertNum * 3 * (final_basis_num / 2));
+		sprintf(file_name_, "%s.basis_1.bin", basis_prefix);
+		WriteBasisInBinary(file_name_, consVertNum, final_basis_num, &paddedBasis1[0]);
+
+		std::vector<double> paddedBasis2(unconsVertNum * 3 * final_basis_num, 0);
+		memcpy(&paddedBasis2[unconsVertNum * 3 * (final_basis_num / 2)], &(unconstrained_portion_->basis_generator->non_linear_modes_[0]), sizeof(double)*unconsVertNum * 3 * (final_basis_num / 2));
+		sprintf(file_name_, "%s.basis_2.bin", basis_prefix);
+		WriteBasisInBinary(file_name_, unconsVertNum, final_basis_num, &paddedBasis2[0]);
+		sprintf(file_name_, "%s.basis_2.txt", basis_prefix);
+		WriteBasisInText(file_name_, unconsVertNum, final_basis_num, &paddedBasis2[0]);
+
+		//Next we dump the non-linear weights
+		sprintf(file_name_, "%s.nonlin_weights.bin", basis_prefix);
+		nonLinWeights_.resize(final_basis_num, 0);
+		std::copy(constrained_portion_->basis_generator->eigen_values_.begin(), constrained_portion_->basis_generator->eigen_values_.end(), nonLinWeights_.begin());
+		std::copy(unconstrained_portion_->basis_generator->eigen_values_.begin(), unconstrained_portion_->basis_generator->eigen_values_.end(), nonLinWeights_.begin()+(final_basis_num/2));
+		dj::Write1DVectorBinary(file_name_,nonLinWeights_);
+
+		//Next we dump the pure eigen values 
+		sprintf(file_name_, "%s.pure_eigen_vals.bin", basis_prefix);
+		eigenValues_.resize(linear_basis_num, 0);
+		std::copy(constrained_portion_->basis_generator->pure_eigen_values_.begin(), constrained_portion_->basis_generator->pure_eigen_values_.end(), eigenValues_.begin());
+		std::copy(unconstrained_portion_->basis_generator->pure_eigen_values_.begin(), unconstrained_portion_->basis_generator->pure_eigen_values_.end(), eigenValues_.begin() + (linear_basis_num / 2));
+		dj::Write1DVectorBinary(file_name_,eigenValues_);
+
+		//Next we dump the pure eigen vectors
+		eigenVectors_.resize(totalVerts * 3 * linear_basis_num, 0);
+		for (int c = 0; c<(linear_basis_num / 2); c++){
+			for (int r = 0; r<consVertNum * 3; r++){
+				eigenVectors_[ELT(totalVerts * 3, r, c)] = constrained_portion_->basis_generator->pure_eigen_vectors_[ELT(consVertNum * 3, r, c)];
+			}
+		}
+		for (int c = 0; c<(linear_basis_num / 2); c++){
+			for (int r = 0; r<unconsVertNum * 3; r++){
+				eigenVectors_[ELT(totalVerts * 3, r + (consVertNum * 3), c + (linear_basis_num / 2))] = unconstrained_portion_->basis_generator->pure_eigen_vectors_[ELT(unconsVertNum * 3, r, c)];
+			}
+		}
+		sprintf(file_name_, "%s.pure_eigen_vecs.bin", basis_prefix);
+		WriteBasisInBinary(file_name_, totalVerts, linear_basis_num, &eigenVectors_[0]);
+
+		//Finally we dump the frequencies also 
+		sprintf(file_name_, "%s.lin_freqs.bin", basis_prefix);
+		frequencies_.resize(linear_basis_num, 0);
+		std::copy(constrained_portion_->basis_generator->frequencies_.begin(), constrained_portion_->basis_generator->frequencies_.end(), frequencies_.begin());
+		std::copy(unconstrained_portion_->basis_generator->frequencies_.begin(), unconstrained_portion_->basis_generator->frequencies_.end(), frequencies_.begin() + (linear_basis_num / 2));
+		dj::Write1DVectorBinary(file_name_, frequencies_);
+
+
+
+
 }
 
 /*
-SingleDomainBasisGenerator::SingleDomainBasisGenerator(const char *mesh_file, AffineTransformer<double> *transformer)
-  : SubspaceTet(mesh_file, 0, transformer) {
-  fixed_verts_.clear();
-}
-
-void SingleDomainBasisGenerator::ProcessFixedVertex(const char *filename) {
-    int numFixedV;
-    int* fixedV;
-    loadCommaList(filename,&numFixedV,&fixedV);
-    fixed_verts_.resize(numFixedV);
-    P(numFixedV);
-    for(int i = 0 ;i < numFixedV; i++) {
-        fixed_verts_[i] = fixedV[i] - 1;
-    }
-}
-
 void SingleDomainBasisGenerator::preLoad(const char *basis_prefix) {
     basis_generator = new BasisGenerator(inv_fem_->vega_mesh_, &mass_[0]);
     if (fixed_verts_.size() != 0) {

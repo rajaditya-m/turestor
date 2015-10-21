@@ -63,10 +63,13 @@ void Init() {
   std::string constrainedMeshName = dj::Format("%s/stem", GetDataFolder());
   std::string unconstrainedMeshName = dj::Format("%s/head", GetDataFolder());
 
+	std::cout << "\n\n\n*******************************************************\n\n\n";
+
   basisGeneratorDouble = new DoubleDomainBasisGenerator(unconstrainedMeshName.c_str(),constrainedMeshName.c_str(),&transform);
-  std::string basis_prefix_2 = dj::Format("%z/modal_basis/genBasis",GetDataFolder());
+  std::string basis_prefix_2 = dj::Format("%z/modal_basis/genBasis2",GetDataFolder());
   std::string fixed_vertex_file_2 = dj::Format("%z/fixed_verts.bou",GetModelFolder());
   basisGeneratorDouble->ProcessFixedVertex(fixed_vertex_file.c_str());
+	basisGeneratorDouble->GenerateBasis(basis_prefix_2.c_str(), 30, 90);
   //basisGenerator->preLoad(basis_prefix.c_str());
   //basisGenerator->GenerateBasis(basis_prefix.c_str(),30,90);
 
@@ -82,21 +85,21 @@ void Init() {
   singleDomainCubOp.GenerateCubature(maxCubaturePoints, 1.0e-6);*/
 
 
-  /*float scale = 0.01000;
+  float scale = 0.01000;
   int maxCubaturePoints = 150;
   std::string meshname = dj::Format("%s/stem", GetDataFolder());
-  SingleDomainCubature singleDomainCubOp(meshname.c_str(),&transform,true,false,0);
-  std::string output_folder = dj::Format("%z/cubature_1", GetDataFolder());
-  std::string name = dj::Format("%s/modal_basis/genBasis.basis_1.bin", GetDataFolder());
+	std::string output_folder = dj::Format("%z/cubature_1", GetDataFolder());
+	std::string name = dj::Format("%s/modal_basis/genBasis2.basis_1.bin", GetDataFolder());
+  /*SingleDomainCubature singleDomainCubOp(meshname.c_str(),&transform,true,false,0);
   singleDomainCubOp.LoadBinarySubspace(name.c_str());
   singleDomainCubOp.SetFolder(100,output_folder,scale,true);//true);
-  singleDomainCubOp.GenerateCubature(maxCubaturePoints, 1.0e-6);
+  singleDomainCubOp.GenerateCubature(maxCubaturePoints, 1.0e-6);*/
 
-  maxCubaturePoints = 150;
+  /*maxCubaturePoints = 150;
   meshname = dj::Format("%s/head", GetDataFolder());
   SingleDomainCubature singleDomainCubOp2(meshname.c_str(),&transform,true,false,0);
   output_folder = dj::Format("%z/cubature_2", GetDataFolder());
-  name = dj::Format("%s/modal_basis/genBasis.basis_2.bin", GetDataFolder());
+  name = dj::Format("%s/modal_basis/genBasis2.basis_2.bin", GetDataFolder());
   singleDomainCubOp2.LoadBinarySubspace(name.c_str());
   singleDomainCubOp2.SetFolder(100,output_folder,scale,true);//true);
   singleDomainCubOp2.GenerateCubature(maxCubaturePoints, 1.0e-6);*/
@@ -162,8 +165,8 @@ void Init() {
   global::current_body = tet;
   char file_name[512];
   int numRows = tet->vertex_num_ * 3;
-  int numBasis = basisGenerator->basis_generator->non_linear_mode_num_;
-  tet->LoadBinarySubspace(basisGenerator->basis_generator->non_linear_modes_,numRows,numBasis);
+	int numBasis = 90;
+  tet->LoadBinarySubspace(basisGeneratorDouble->nonLinearModes_,numRows,numBasis);
   //int numBasis = basisGenerator->basis_generator->linear_mode_num_;
   //tet->LoadBinarySubspace(basisGenerator->basis_generator->pure_eigen_vectors_,numRows,numBasis);
 
@@ -270,7 +273,7 @@ int SubspaceSimulator::Render() {
 int SubspaceSimulator::Idle() {
     tet->SimulateWithCubature(global::time_step);
     //tet->SimulateWithRigidMotion(global::time_step);
-    //Btet->Simulate(global::time_step);
+    //tet->Simulate(global::time_step);
     int statusCheck = tet->getSimMode();
     if(statusCheck==2 && !newBasisConstructed) {
         global::sim_state = 2;

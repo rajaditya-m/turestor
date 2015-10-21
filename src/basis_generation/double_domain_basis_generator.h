@@ -38,10 +38,13 @@ public:
   SingleDomainBasisGenerator *constrained_portion_;
   SingleDomainBasisGenerator *unconstrained_portion_;
 
-  std::vector<double> linearModes_;
-  std::vector<double> eigenValues_;
+  std::vector<double> nonLinearModes_;
+	std::vector<double> eigenValues_;
   std::vector<double> eigenVectors_;
   std::vector<double> frequencies_;
+	std::vector<double> nonLinWeights_;
+
+	char file_name_[1024];
 };
 
 #endif // SINGLEDOMAINBASISGENERATOR_H

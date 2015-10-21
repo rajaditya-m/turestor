@@ -27,8 +27,8 @@ public:
                  double poisson_ratio = 0.45,
                  double density = 1000.0,
                  double* mass = NULL,
-                 std::set<int> *fixed_vertex_set = NULL);
-  BasisGenerator(TetMesh* mesh, double* mass = NULL, std::set<int>* fixed_vertex_set = NULL);
+                 std::set<int> *fixed_vertex_set = NULL, bool isConstrained = false);
+	BasisGenerator(TetMesh* mesh, double* mass = NULL, std::set<int>* fixed_vertex_set = NULL,bool isConstrained = false);
 
   void Construct(double* mass, std::set<int>* fixed_vertex_set);
  ~BasisGenerator();
@@ -111,6 +111,7 @@ public:
  std::vector<double> massSqrt_;
 
  int stiffyMultiplier_;
+ bool isConstrained_;
 
 };
 #endif // BASIS_GENERATOR_H
