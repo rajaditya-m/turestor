@@ -127,14 +127,17 @@ void BasisGenerator::preLoad(const char *basis_prefix){
 	in2.Read(&row_num, 1);
 	pure_eigen_values_.resize(row_num);
 	in2.Read(&pure_eigen_values_[0], row_num);
-
+	//for (int i = 0; i < row_num; i++)
+	//	std::cout << pure_eigen_values_[i] << "\n";
 
 	//Read the pure eigen vectors
 	sprintf(file_name, "%s.pure_eigen_vecs.bin", basis_prefix);
 	BinaryFileReader in3(file_name);
 	in3.Read(&row_num, 1);
-	pure_eigen_vectors_.resize(row_num);
-	in3.Read(&pure_eigen_vectors_[0], row_num);
+	in3.Read(&basis_num_, 1);
+	pure_eigen_vectors_.resize(row_num*basis_num_);
+	in3.Read(&pure_eigen_vectors_[0], row_num*basis_num_);
+
 
 	/*sprintf(file_name,"%s_write_lin_basis.txt",basis_prefix);
 	std::ofstream fout(file_name);
@@ -160,8 +163,10 @@ void BasisGenerator::preLoad(const char *basis_prefix){
 	numColsOriginalRHS_ = basis_num_;
 
 	//Read the hessian tensors also
-	sprintf(file_name, "%s.default_hessian.bin", basis_prefix);
-	stVKStiffnessHessian = new StVKHessianTensor(file_name, mesh_->getNumVertices(), -1, -1); //Remeber last two are dummies
+	char file_name_2[512];
+	sprintf(file_name, "%s.default_hessian_1.bin", basis_prefix);
+	sprintf(file_name_2, "%s.default_hessian_2_offset.bin", basis_prefix);
+	stVKStiffnessHessian = new StVKHessianTensor(file_name, file_name_2, mesh_->getNumVertices(), -1, -1); //Remeber last two are dummies
 
 	//Read the pure linear frequencies
 	sprintf(file_name, "%s.lin_freqs.bin", basis_prefix);
@@ -375,7 +380,7 @@ void BasisGenerator::ComputeModalDerivatives() {
 	//      printf("\n");
 	printf("Right-hand sides for modal derivatives computed.\n"); fflush(NULL);
 
-	delete(stVKStiffnessHessian);
+	//delete(stVKStiffnessHessian);
 	delete(precomputedIntegrals);
 	delete(stiffnessMatrixClass);
 	delete(internalForces);
@@ -1482,6 +1487,7 @@ void BasisGenerator::RegenerateAllModes(int modeId){
 	for (int i = 0; i < stitched_linear_mode_num_; i++) {
 		//if(modeId==2) {
 		stitched_frequencies_1_[i] = sqrt(stitched_eigen_values_1_[i]) / (2 * M_PI);
+		//std::cout << "STF[" << (i+1) << "] " <<  stitched_frequencies_1_[i] << "\n";
 		//}
 		//else {
 		//   stitched_frequencies_2_[i] = sqrt(stitched_eigen_values_2_[i]) / (2 * M_PI);
@@ -1491,13 +1497,16 @@ void BasisGenerator::RegenerateAllModes(int modeId){
 	/*for(int i = 0; i<stitched_linear_mode_num_;i++) {
 			std::cout << "TR:" << stitched_frequencies_1_[i] << "\n";
 			}*/
-
+	int linearModesInOriginal = linear_mode_num_;
+	double fac = (0.8 - 0.1) / 5;
 	for (int i = 0; i < 6; i++) {
-		stitched_frequencies_1_[i] = stitched_frequencies_1_[6];//*(i+15);
-		frequencies_[i] = frequencies_[6];//*(i+15);
+		stitched_frequencies_1_[i] = fac*(i + 1)*stitched_frequencies_1_[6];//*(i+15);
+		frequencies_[i + (linearModesInOriginal/2)] = fac*(i+1)*frequencies_[6 + (linearModesInOriginal/2)];//*(i+15);
 	}
 
-
+	for (int i = 0; i < stitched_linear_mode_num_; i++) {
+		std::cout << "STF[" << (i+1) << "] " <<  stitched_frequencies_1_[i] << " LF[" << (i+1) << "] " << frequencies_[i] <<  "\n";
+	}
 
 
 	profiler.End("Lin Mode Recomputation");
@@ -1508,14 +1517,24 @@ void BasisGenerator::RegenerateAllModes(int modeId){
 	profiler.Start("Modal Derivative");
 	int numNewModesToUse = 5;
 	int rhsColsToUse;
+	int rhsColsFromConstrained, rhsColsFromUnconstrained, RHSoffset;
 	//numColsOriginalRHS_ = 0;
 	if (numColsOriginalRHS_) {
-		rhsColsToUse = 0.4 * numColsOriginalRHS_;
-		//P(rhsColsToUse);
+		//This must be split into two parts 
+		// The first part will be the RHS offsets from the first part 
+		int rhsColsFromCons = ((linearModesInOriginal / 2)*((linearModesInOriginal / 2) + 1)) / 2;
+		int rhsColsFromUncons = 21 + (((linearModesInOriginal / 2) - 6)*((linearModesInOriginal / 2) - 6 + 1)) / 2;
+		RHSoffset = rhsColsFromCons;
+		rhsColsFromConstrained = 0.3 * rhsColsFromCons;
+		rhsColsFromUnconstrained = 21 + (0.2 * rhsColsFromUncons);
+		rhsColsToUse = rhsColsFromConstrained + rhsColsFromUnconstrained;
 	}
 	else {
 		rhsColsToUse = 0;
 	}
+
+	P(rhsColsFromConstrained, rhsColsFromUnconstrained,rhsColsToUse);
+
 	//int numNewModalDerivs = 21 + ((numNewModesToUse-6)*((numNewModesToUse-6)+1))/2;
 	int numNewModalDerivs = ((numNewModesToUse)*((numNewModesToUse)+1)) / 2;
 	double *finalRHS = new double[numRows*(numNewModalDerivs + rhsColsToUse)];
@@ -1560,7 +1579,12 @@ void BasisGenerator::RegenerateAllModes(int modeId){
 		}
 
 	if (rhsColsToUse)
-		memcpy(&finalRHS[numRows*numNewModalDerivs], rhsOriginal_.data(), sizeof(double)*numRows*rhsColsToUse);
+	{
+		//memcpy(&finalRHS[numRows*numNewModalDerivs], rhsOriginal_.data(), sizeof(double)*numRows*rhsColsToUse);
+		memcpy(&finalRHS[numRows*numNewModalDerivs], rhsOriginal_.data(), sizeof(double)*numRows*rhsColsFromConstrained);
+		memcpy(&finalRHS[numRows*(numNewModalDerivs + rhsColsFromConstrained)], rhsOriginal_.data()+RHSoffset, sizeof(double)*numRows*rhsColsFromUnconstrained);
+	}
+	
 	//int numRetainedDOFs = numRows - numVertsToRemove_;
 	double * rhsConstrained = new double[numRetainedDOFs * (numNewModalDerivs + rhsColsToUse)];
 	//OMP_FOR
@@ -1603,83 +1627,129 @@ void BasisGenerator::RegenerateAllModes(int modeId){
 	offset = (numNewModalDerivs + rhsColsToUse)*numRows;
 	memcpy(derivSoup.data() + offset, &stitched_linear_modes_[0], sizeof(double)*numRows*stitched_linear_mode_num_);
 
+	P(numColsInSoup);
 
 
 	//Frequency Scaling must happen here
-	int counter = 0;
-
-
-	for (int i = 0; i < numNewModesToUse; i++) {
-		for (int j = i; j < numNewModesToUse; j++) {
-			double lambdai, lambdaj, lambda0;
-			if (modeId == 2) {
-				lambdai = stitched_frequencies_1_[i] * stitched_frequencies_1_[i];
-				lambdaj = stitched_frequencies_1_[j] * stitched_frequencies_1_[j];
-				lambda0 = stitched_frequencies_1_[0] * stitched_frequencies_1_[0];
-			}
-			else if (modeId == 4) {
-				lambdai = stitched_frequencies_2_[i] * stitched_frequencies_2_[i];
-				lambdaj = stitched_frequencies_2_[j] * stitched_frequencies_2_[j];
-				lambda0 = stitched_frequencies_2_[0] * stitched_frequencies_2_[0];
-			}
-			double factor = lambda0 * lambda0 / (lambdai * lambdaj);
-			OMP_FOR
-				for (int row = 0; row < numRows; ++row) {
-				derivSoup(row, counter) *= factor;
+	if (1)
+	{
+		int counter = 0;
+		for (int i = 0; i < numNewModesToUse; i++) {
+			for (int j = i; j < numNewModesToUse; j++) {
+				double lambdai, lambdaj, lambda0;
+				if (modeId == 2) {
+					lambdai = stitched_frequencies_1_[i] * stitched_frequencies_1_[i];
+					lambdaj = stitched_frequencies_1_[j] * stitched_frequencies_1_[j];
+					lambda0 = stitched_frequencies_1_[0] * stitched_frequencies_1_[0];
 				}
-			counter++;
-		}
-	}
-	bool stopLoop = false;
-
-
-	if (rhsColsToUse) {
-		int counter2 = 0;
-		for (int i = 0; i < linear_mode_num_; i++) {
-			for (int j = i; j < linear_mode_num_; j++) {
-				double lambdai = frequencies_[i] * frequencies_[i];
-				double lambdaj = frequencies_[j] * frequencies_[j];
-				double lambda0 = frequencies_[0] * frequencies_[0];
+				else if (modeId == 4) {
+					lambdai = stitched_frequencies_2_[i] * stitched_frequencies_2_[i];
+					lambdaj = stitched_frequencies_2_[j] * stitched_frequencies_2_[j];
+					lambda0 = stitched_frequencies_2_[0] * stitched_frequencies_2_[0];
+				}
 				double factor = lambda0 * lambda0 / (lambdai * lambdaj);
 				OMP_FOR
 					for (int row = 0; row < numRows; ++row) {
 					derivSoup(row, counter) *= factor;
 					}
 				counter++;
-				counter2++;
-				if (counter2 == rhsColsToUse) {
-					stopLoop = true;
+			}
+		}
+
+		P(counter);
+
+		bool stopLoop = false;
+		int counter2 = 0;
+
+
+		if (rhsColsToUse) {
+
+			//First for the constrained portions
+			for (int i = 0; i < linearModesInOriginal / 2; i++) {
+				for (int j = i; j < linearModesInOriginal / 2; j++) {
+					double lambdai = frequencies_[i] * frequencies_[i];
+					double lambdaj = frequencies_[j] * frequencies_[j];
+					double lambda0 = frequencies_[0] * frequencies_[0];
+					double factor = lambda0 * lambda0 / (lambdai * lambdaj);
+					OMP_FOR
+						for (int row = 0; row < numRows; ++row) {
+						derivSoup(row, counter) *= factor;
+						}
+					counter++;
+					counter2++;
+					if (counter2 == rhsColsFromConstrained) {
+						stopLoop = true;
+						break;
+					} //Exit inner loop
+				}
+				if (stopLoop)
 					break;
+			}
+
+			//Next for the unconstrained portions 
+			for (int i = 0; i < 6; i++) {
+				for (int j = i; j < 6; j++) {
+					double lambdai = frequencies_[i + (linearModesInOriginal / 2)] * frequencies_[i + linearModesInOriginal / 2];
+					double lambdaj = frequencies_[j + (linearModesInOriginal / 2)] * frequencies_[j + (linearModesInOriginal / 2)];
+					double lambda0 = frequencies_[linearModesInOriginal / 2] * frequencies_[linearModesInOriginal / 2];
+					double factor = lambda0 * lambda0 / (lambdai * lambdaj);
+					OMP_FOR
+						for (int row = 0; row < numRows; ++row) {
+						derivSoup(row, counter) *= factor;
+						}
+					counter++;
 				} //Exit inner loop
 			}
-			if (stopLoop)
-				break;
-		}
-	}
-	for (int i = 0; i < r; ++i) {
-		double lambdai, lambda0, factor;
-		if (modeId == 2) {
-			lambdai = stitched_frequencies_1_[i] * stitched_frequencies_1_[i];
-			lambda0 = stitched_frequencies_1_[0] * stitched_frequencies_1_[0];
-			factor = lambda0 / lambdai;
-
-		}
-		else if (modeId == 4) {
-			lambdai = stitched_frequencies_2_[i] * stitched_frequencies_2_[i];
-			lambda0 = stitched_frequencies_2_[0] * stitched_frequencies_2_[0];
-			factor = lambda0 / lambdai;
-		}
-		OMP_FOR
-			for (int row = 0; row < numRows; ++row) {
-			derivSoup(row, counter) *= factor;
+			
+			counter2 = 0;
+			stopLoop = false;
+			for (int i = 6; i < linearModesInOriginal / 2; i++) {
+				for (int j = i; j < linearModesInOriginal / 2; j++) {
+					double lambdai = frequencies_[i + (linearModesInOriginal / 2)] * frequencies_[i + (linearModesInOriginal / 2)];
+					double lambdaj = frequencies_[j + (linearModesInOriginal / 2)] * frequencies_[j + (linearModesInOriginal / 2)];
+					double lambda0 = frequencies_[linearModesInOriginal / 2] * frequencies_[linearModesInOriginal / 2];
+					double factor = lambda0 * lambda0 / (lambdai * lambdaj);
+					OMP_FOR
+						for (int row = 0; row < numRows; ++row) {
+						derivSoup(row, counter) *= factor;
+						}
+					counter++;
+					counter2++;
+					if (counter2 == (rhsColsFromUnconstrained - 21)) {
+						stopLoop = true;
+						break;
+					} //Exit inner loop
+				}
+				if (stopLoop)
+					break;
 			}
-		counter++;
-	}
+			
 
-	if (counter != numColsInSoup) {
-		std::cout << "[WARNING] Scaling coverage is not complete " << counter << " " << numColsInSoup << "\n";
-	}
+		}
+		for (int i = 0; i < r; ++i) {
+			double lambdai, lambda0, factor;
+			if (modeId == 2) {
+				lambdai = stitched_frequencies_1_[i] * stitched_frequencies_1_[i];
+				lambda0 = stitched_frequencies_1_[0] * stitched_frequencies_1_[0];
+				factor = lambda0 / lambdai;
 
+			}
+			else if (modeId == 4) {
+				lambdai = stitched_frequencies_2_[i] * stitched_frequencies_2_[i];
+				lambda0 = stitched_frequencies_2_[0] * stitched_frequencies_2_[0];
+				factor = lambda0 / lambdai;
+			}
+			OMP_FOR
+				for (int row = 0; row < numRows; ++row) {
+				derivSoup(row, counter) *= factor;
+				}
+			counter++;
+		}
+		if (counter != numColsInSoup) {
+			std::cout << "[WARNING] Scaling coverage is not complete " << counter << " " << numColsInSoup << "\n";
+		}
+		
+	}
 
 	// profiler.End("Scaling");
 

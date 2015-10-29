@@ -46,7 +46,8 @@ public:
 
   StVKHessianTensor(StVKStiffnessMatrix * stVKStiffnessMatrix);
   StVKHessianTensor(const char* binFile,int nv, int elem, int nev);
-  virtual ~StVKHessianTensor();
+	StVKHessianTensor(const char* binaryFileName_1, const char* binaryFileName_2, int nv, int elem, int nev);
+	virtual ~StVKHessianTensor();
 
   inline int numVertices() { return numVertices_; }
   inline int numElements() { return numElements_; }
@@ -59,6 +60,8 @@ public:
   // high-memory version; must call ComputeHessianAtZero before calling EvaluateHessianQuadraticForm
   int ComputeHessianAtZero(int verbose=1); 
   int SaveHessianAtZeroToFile(const char * filename);
+	int SaveHessianAtZeroToFileWithOffset(const char* filename, int offset);
+	int AppendHessianAtZeroToFileWithOffset(const char * filename, int offset);
   void EvaluateHessianQuadraticForm(double * u, double * v, double * result); 
 
   // compute the vector result=(H:u)v, where H is the Hessian in the zero deformation configuration

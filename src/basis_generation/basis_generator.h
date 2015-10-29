@@ -6,6 +6,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 
+//#include "StVKHessianTensor.h"
+
 double ComputeDiff(int n3, int r, double* basis0, double* basis1);
 
 double DiffFromFile(const char* file_name0, const char* file_name1);
@@ -85,6 +87,7 @@ public:
   int non_linear_mode_num_;
   std::vector<double> non_linear_modes_; // in column-major order
   std::vector<double> eigen_values_;
+	int numColsOriginalRHS_;
 
   std::set<int> fixed_vertices_;
   int numVertsToRemove_;
@@ -101,7 +104,6 @@ public:
   const char* prefix_;
 
   Eigen::MatrixXd rhsOriginal_;
-  int numColsOriginalRHS_;
 
   SparseMatrix* stitched_stiffness_matrix_;
   StVKHessianTensor *stVKStiffnessHessian;

@@ -115,6 +115,42 @@ StVKHessianTensor::StVKHessianTensor(const char* binaryFileName,int nv, int elem
   std::cout << "[INFO] Hessian has been read into memory.\n";
 }
 
+StVKHessianTensor::StVKHessianTensor(const char* binaryFileName_1, const char* binaryFileName_2, int nv, int elem, int nev) {
+	numVertices_ = nv;
+	numElements_ = elem;
+	numElementVertices = nev;
+
+	std::ifstream inFile(binaryFileName_1, std::ios::in | std::ios::binary);
+	int numHessians;
+	inFile.read(reinterpret_cast<char* >(&numHessians), sizeof(int));
+	std::cout << "Total Number of Hessians - 1:" << numHessians << "\n";
+	for (int h = 0; h < numHessians; h++) {
+		int v1, v2, v3;
+		inFile.read((char*)&v1, sizeof(int));
+		inFile.read((char*)&v2, sizeof(int));
+		inFile.read((char*)&v3, sizeof(int));
+		double *elem3x3 = new double[27];
+		inFile.read((char*)elem3x3, sizeof(double) * 27);
+		hessian.insert(std::make_pair(triIndex(v1, v2, v3), elem3x3));
+	}
+	inFile.close();
+
+	std::ifstream inFile2(binaryFileName_2, std::ios::in | std::ios::binary);
+	inFile2.read(reinterpret_cast<char* >(&numHessians), sizeof(int));
+	std::cout << "Total Number of Hessians - 2:" << numHessians << "\n";
+	for (int h = 0; h < numHessians; h++) {
+		int v1, v2, v3;
+		inFile2.read((char*)&v1, sizeof(int));
+		inFile2.read((char*)&v2, sizeof(int));
+		inFile2.read((char*)&v3, sizeof(int));
+		double *elem3x3 = new double[27];
+		inFile2.read((char*)elem3x3, sizeof(double) * 27);
+		hessian.insert(std::make_pair(triIndex(v1, v2, v3), elem3x3));
+	}
+	inFile2.close();
+	std::cout << "[INFO] Hessian has been read into memory.\n";
+}
+
 
 StVKHessianTensor::~StVKHessianTensor()
 {
@@ -303,6 +339,7 @@ int StVKHessianTensor::SaveHessianAtZeroToFile(const char * filename)
     int data1 = index.second;
     int data2 = index.third;
 
+
     if ((int)(fwrite(&data0,sizeof(int),1,fout)) < 1)
       return 1;
 
@@ -325,6 +362,100 @@ int StVKHessianTensor::SaveHessianAtZeroToFile(const char * filename)
 
   return 0;
 }
+
+int StVKHessianTensor::SaveHessianAtZeroToFileWithOffset(const char * filename, int offset)
+{
+	FILE * fout = fopen(filename, "wb");
+
+	if (!fout)
+	{
+		printf("Error: couldn't write to file %s.\n", filename);
+		return 1;
+	}
+
+	size_t hessianSize = hessian.size();
+	if ((int)(fwrite(&hessianSize, sizeof(int), 1, fout)) < 1)
+		return 1;
+
+	hessianType::iterator pos;
+
+	for (pos = hessian.begin(); pos != hessian.end(); pos++)
+	{
+		triIndex index = pos->first;
+		int data0 = index.first + offset;
+		int data1 = index.second + offset;
+		int data2 = index.third + offset;
+
+
+		if ((int)(fwrite(&data0, sizeof(int), 1, fout)) < 1)
+			return 1;
+
+		if ((int)(fwrite(&data1, sizeof(int), 1, fout)) < 1)
+			return 1;
+
+		if ((int)(fwrite(&data2, sizeof(int), 1, fout)) < 1)
+			return 1;
+
+		double * entry = pos->second;
+		for (int j = 0; j<27; j++)
+		{
+			double entry0 = entry[j];
+			if ((int)(fwrite(&entry0, sizeof(double), 1, fout)) < 1)
+				return 1;
+		}
+	}
+
+	fclose(fout);
+
+	return 0;
+}
+
+int StVKHessianTensor::AppendHessianAtZeroToFileWithOffset(const char * filename, int offset)
+{
+	FILE * fout = fopen(filename, "ab");
+
+	if (!fout)
+	{
+		printf("Error: couldn't write to file %s.\n", filename);
+		return 1;
+	}
+
+	size_t hessianSize = hessian.size();
+	if ((int)(fwrite(&hessianSize, sizeof(int), 1, fout)) < 1)
+		return 1;
+
+	hessianType::iterator pos;
+
+	for (pos = hessian.begin(); pos != hessian.end(); pos++)
+	{
+		triIndex index = pos->first;
+		int data0 = index.first + offset;
+		int data1 = index.second + offset;
+		int data2 = index.third + offset;
+
+		if ((int)(fwrite(&data0, sizeof(int), 1, fout)) < 1)
+			return 1;
+
+		if ((int)(fwrite(&data1, sizeof(int), 1, fout)) < 1)
+			return 1;
+
+		if ((int)(fwrite(&data2, sizeof(int), 1, fout)) < 1)
+			return 1;
+
+		double * entry = pos->second;
+		for (int j = 0; j<27; j++)
+		{
+			double entry0 = entry[j];
+			if ((int)(fwrite(&entry0, sizeof(double), 1, fout)) < 1)
+				return 1;
+		}
+	}
+
+	fclose(fout);
+
+	return 0;
+}
+
 
 void StVKHessianTensor::EvaluateHessianQuadraticFormDirect(double * phir, double * phis, double * result)
 {

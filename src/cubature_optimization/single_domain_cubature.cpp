@@ -23,7 +23,7 @@ void SingleDomainCubature::SetFolder(int num_of_samples, string output_folder, d
 
     Vec eigen_values;
     if (read_eigen_value) {
-        std::string eigen_value_file = dj::Format("%z/modal_basis/genBasis.nonlin_weights.bin", GetDataFolder());
+        std::string eigen_value_file = dj::Format("%z/modal_basis/genBasis2.nonlin_weights.bin", GetDataFolder());
         std::ifstream eig(eigen_value_file, std::ios::binary);
         ASSERT(eig.is_open(), P(eigen_value_file));
         int basis_num;
@@ -185,7 +185,7 @@ void SingleDomainCubature::GenerateCubature(int max_cubature_point, double relat
     }
     int validation_sample_num = int(0.05 * pose_num_);
     if (validation_sample_num == 0) validation_sample_num = 3;
-    run(training_set, training_force, relative_error, max_cubature_point, 7000, 10, pose_num_ - validation_sample_num);
+    run(training_set, training_force, relative_error, max_cubature_point,25000, 10, pose_num_ - validation_sample_num);
     {
         std::string file_name = dj::Format("%z/cubature/error.txt", GetDataFolder());
         std::ofstream out(file_name, std::ios::app);

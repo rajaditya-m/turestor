@@ -789,7 +789,7 @@ profiler.Start("OMP Assemble");
   if(sim_mode_ == 2) {
       double stiffness = 5.0e6;
       MapVec u((double*) inv_fem_->u_, vertex_num_ * 3);
-      Vec my_f_reduced = Vec::Zero(vertex_num_ * 3);
+      Vec my_f_reduced = Vec::Zero(basis_num_);
       Mat my_sp_reduced = Mat::Zero(basis_num_, basis_num_);
       for(int i=0;i<basis_num_;i++) {
           for(int j=0;j<basis_num_;j++) {

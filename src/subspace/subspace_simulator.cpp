@@ -29,6 +29,7 @@ SingleDomainBasisGenerator *basisGenerator;
 DoubleDomainBasisGenerator *basisGeneratorDouble;
 int part_id = 16;
 int render_mode = 0;
+int timeStep_ID = 0;
 using namespace global;
 void CreateBody() {
   L("Start creating bodies");
@@ -51,40 +52,25 @@ void Init() {
   CreateBody();
 
   //Compute the basis first
+	std::vector<std::string>* transform_cmd = conf.Get<std::vector<std::string>* >("affine_transform");
+	AffineTransformer<double> transform(*transform_cmd);
+	std::string constrainedMeshName = dj::Format("%s/stem", GetDataFolder());
+	std::string unconstrainedMeshName = dj::Format("%s/head", GetDataFolder());
+	basisGeneratorDouble = new DoubleDomainBasisGenerator(unconstrainedMeshName.c_str(),constrainedMeshName.c_str(),&transform);
+	std::string basis_prefix_2 = dj::Format("%z/modal_basis/genBasis2",GetDataFolder());
+	std::string fixed_vertex_file_2 = dj::Format("%z/fixed_verts.bou",GetModelFolder());
+	std::string fixed_vertex_file = dj::Format("%z/fixed_verts.bou", GetModelFolder());
+	//basisGeneratorDouble->ProcessFixedVertex(fixed_vertex_file.c_str());
+	//basisGeneratorDouble->GenerateBasis(basis_prefix_2.c_str(), 30, 90);
 
-  std::vector<std::string>* transform_cmd = conf.Get<std::vector<std::string>* >("affine_transform");
-  AffineTransformer<double> transform(*transform_cmd);
+ 
   basisGenerator = new SingleDomainBasisGenerator(GetMeshFile(),&transform);
-  std::string basis_prefix = dj::Format("%z/modal_basis/genBasis",GetDataFolder());
-  std::string fixed_vertex_file = dj::Format("%z/fixed_verts.bou",GetModelFolder());
+  std::string basis_prefix = dj::Format("%z/modal_basis/genBasis2",GetDataFolder());
   basisGenerator->ProcessFixedVertex(fixed_vertex_file.c_str());
   basisGenerator->preLoad(basis_prefix.c_str());
 
-  std::string constrainedMeshName = dj::Format("%s/stem", GetDataFolder());
-  std::string unconstrainedMeshName = dj::Format("%s/head", GetDataFolder());
-
-	std::cout << "\n\n\n*******************************************************\n\n\n";
-
-  basisGeneratorDouble = new DoubleDomainBasisGenerator(unconstrainedMeshName.c_str(),constrainedMeshName.c_str(),&transform);
-  std::string basis_prefix_2 = dj::Format("%z/modal_basis/genBasis2",GetDataFolder());
-  std::string fixed_vertex_file_2 = dj::Format("%z/fixed_verts.bou",GetModelFolder());
-  basisGeneratorDouble->ProcessFixedVertex(fixed_vertex_file.c_str());
-	basisGeneratorDouble->GenerateBasis(basis_prefix_2.c_str(), 30, 90);
-  //basisGenerator->preLoad(basis_prefix.c_str());
-  //basisGenerator->GenerateBasis(basis_prefix.c_str(),30,90);
 
   //Compute the cubature here
-
-  /*float scale = 0.01000;
-  int maxCubaturePoints = 140;
-  SingleDomainCubature singleDomainCubOp(GetMeshFile(),&transform);
-  std::string output_folder = dj::Format("%z/cubature", GetDataFolder());
-  std::string name = dj::Format("%s/modal_basis/genBasis.basis.bin", GetDataFolder());
-  singleDomainCubOp.LoadBinarySubspace(name.c_str());
-  singleDomainCubOp.SetFolder(100,output_folder,scale,true);//true);
-  singleDomainCubOp.GenerateCubature(maxCubaturePoints, 1.0e-6);*/
-
-
   float scale = 0.01000;
   int maxCubaturePoints = 150;
   std::string meshname = dj::Format("%s/stem", GetDataFolder());
@@ -95,7 +81,7 @@ void Init() {
   singleDomainCubOp.SetFolder(100,output_folder,scale,true);//true);
   singleDomainCubOp.GenerateCubature(maxCubaturePoints, 1.0e-6);*/
 
-  /*maxCubaturePoints = 150;
+  /*maxCubaturePoints = 250;
   meshname = dj::Format("%s/head", GetDataFolder());
   SingleDomainCubature singleDomainCubOp2(meshname.c_str(),&transform,true,false,0);
   output_folder = dj::Format("%z/cubature_2", GetDataFolder());
@@ -109,7 +95,18 @@ void Init() {
   std::vector<int> tid;
   std::vector<double> weights;
   int cubature_flip_counter_ = 0;
-  int elem_offset = 32108;
+	//Get the element cubature merge element number .
+	std::string eleFileName = dj::Format("%s/stem.ele", GetDataFolder());
+	std::ifstream fileIn(eleFileName);
+	std::string firstLine;
+	std::getline(fileIn, firstLine); 
+	std::cout << firstLine << "\n";
+	std::istringstream iss(firstLine);
+	int elem_offset;
+	iss >> elem_offset;
+	fileIn.close();
+	P(elem_offset);
+	//int elem_offset = 164840;
   char file_name_2[512];
   sprintf(file_name_2, "%s/cubature_1/cubature_pnts.txt", GetDataFolder());
   std::ifstream in(file_name_2);
@@ -165,10 +162,12 @@ void Init() {
   global::current_body = tet;
   char file_name[512];
   int numRows = tet->vertex_num_ * 3;
-	int numBasis = 90;
-  tet->LoadBinarySubspace(basisGeneratorDouble->nonLinearModes_,numRows,numBasis);
-  //int numBasis = basisGenerator->basis_generator->linear_mode_num_;
-  //tet->LoadBinarySubspace(basisGenerator->basis_generator->pure_eigen_vectors_,numRows,numBasis);
+	int numBasis = basisGenerator->basis_generator->non_linear_mode_num_;
+	P(numBasis);
+	//tet->LoadBinarySubspace(basisGeneratorDouble->nonLinearModes_,numRows,numBasis);
+	tet->LoadBinarySubspace(basisGenerator->basis_generator->non_linear_modes_,numRows,numBasis);
+ // int numBasis = basisGenerator->basis_generator->linear_mode_num_;
+ // tet->LoadBinarySubspace(basisGenerator->basis_generator->pure_eigen_vectors_,numRows,numBasis);
 
   //sprintf(file_name, "%s/modal_basis/genBasis.basis.bin", GetDataFolder());
   //tet->LoadBinarySubspace(file_name);
@@ -177,7 +176,7 @@ void Init() {
 
   newBasisConstructed = false;
 
-   tet->EnalbeSurfaceRenderingWithVBO(DATA_DIRECTORY "../shader/phong");
+   //tet->EnalbeSurfaceRenderingWithVBO(DATA_DIRECTORY "../shader/phong");
 
 }
 
@@ -298,6 +297,14 @@ int SubspaceSimulator::Idle() {
         tet->LoadBinarySubspace(basisGenerator->basis_generator->stitched_non_linear_modes_,(tet->vertex_num_*3),basisGenerator->basis_generator->stitched_non_linear_mode_num_);
         global::sim_state = 5;
     }
-    //tet->Save_OBJ_File();
+
+		if (global::sim_state == 3)
+		{
+			char file_name[512];
+			sprintf(file_name, "E:/OBJ/Data/Dino/body%d.obj", timeStep_ID);
+			//L("Save body " + std::string(file_name));
+			global::current_body->Save_OBJ_File(file_name);
+			timeStep_ID++;
+		}
   return -1;
 }

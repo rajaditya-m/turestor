@@ -2,7 +2,7 @@
 #include <utility>
 #include <set>
 #include "tet.h"
-
+#include "StVKHessianTensor.h"
 #include "vector_io.h"
 #include "vector_lib.h"
 #include "tet_mesh_simulator_bridge.h"
@@ -38,6 +38,7 @@ void DoubleDomainBasisGenerator::GenerateBasis(const char *basis_prefix, int lin
     int unconsVertNum = unconstrained_portion_->vertex_num_;
     int consVertNum = constrained_portion_->vertex_num_;
     int totalVerts = unconsVertNum+consVertNum;
+		int n3 = totalVerts * 3;
     nonLinearModes_.resize(totalVerts*3*final_basis_num,0);
 		for (int c = 0; c<(final_basis_num / 2); c++){
         for(int r=0;r<consVertNum*3;r++){
@@ -93,6 +94,8 @@ void DoubleDomainBasisGenerator::GenerateBasis(const char *basis_prefix, int lin
 		}
 		sprintf(file_name_, "%s.pure_eigen_vecs.bin", basis_prefix);
 		WriteBasisInBinary(file_name_, totalVerts, linear_basis_num, &eigenVectors_[0]);
+		sprintf(file_name_, "%s.pure_eigen_vecs.txt", basis_prefix);
+		WriteBasisInText(file_name_, totalVerts, linear_basis_num, &eigenVectors_[0]);
 
 		//Finally we dump the frequencies also 
 		sprintf(file_name_, "%s.lin_freqs.bin", basis_prefix);
@@ -101,7 +104,35 @@ void DoubleDomainBasisGenerator::GenerateBasis(const char *basis_prefix, int lin
 		std::copy(unconstrained_portion_->basis_generator->frequencies_.begin(), unconstrained_portion_->basis_generator->frequencies_.end(), frequencies_.begin() + (linear_basis_num / 2));
 		dj::Write1DVectorBinary(file_name_, frequencies_);
 
+		//Also we dump the hessians but this one will beslighlty   tricky 
+		sprintf(file_name_, "%s.default_hessian_1.bin", basis_prefix);
+		constrained_portion_->basis_generator->stVKStiffnessHessian->SaveHessianAtZeroToFile(file_name_);
+		sprintf(file_name_, "%s.default_hessian_2_offset.bin", basis_prefix);
+		unconstrained_portion_->basis_generator->stVKStiffnessHessian->SaveHessianAtZeroToFileWithOffset(file_name_,consVertNum);
+		//unconstrained_portion_->basis_generator->stVKStiffnessHessian->AppendHessianAtZeroToFileWithOffset(file_name_,consVertNum);
 
+		//Finally we dump the Original RHS Columns 
+		int unconsRHSNum = unconstrained_portion_->basis_generator->numColsOriginalRHS_;
+		int consRHSNum = constrained_portion_->basis_generator->numColsOriginalRHS_;
+		int totalRHSNum = unconsRHSNum + consRHSNum;
+		double* orgRHS = new double[n3 * totalRHSNum];
+		memset(orgRHS,0,sizeof(double)*n3*totalRHSNum);
+		for (int c = 0; c<consRHSNum; c++){
+			for (int r = 0; r<consVertNum * 3; r++){
+				orgRHS[ELT(n3,r,c)] = constrained_portion_->basis_generator->rhsOriginal_(r, c);
+			}
+		}
+		for (int c = 0; c<unconsRHSNum; c++){
+			for (int r = 0; r<unconsVertNum * 3; r++){
+				orgRHS[ELT(n3,r + (consVertNum * 3), c + consRHSNum)] = unconstrained_portion_->basis_generator->rhsOriginal_(r, c);
+			}
+		}
+		sprintf(file_name_, "%s.rhs_original.bin", basis_prefix);
+		std::ofstream out(file_name_, std::ios::binary);
+		out.write((char*)&n3, sizeof(int));
+		out.write((char*)&totalRHSNum, sizeof(int));
+		out.write((char*)orgRHS, sizeof(double) * n3 * totalRHSNum);
+		out.close();
 
 
 }
